@@ -1,4 +1,4 @@
-# mousePort
+# MouseBot
 
 Mouse recorder for Windows.
 
