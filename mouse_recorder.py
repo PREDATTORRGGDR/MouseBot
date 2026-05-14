@@ -1,5 +1,6 @@
 import json
 import time
+import winsound
 from pathlib import Path
 
 from pynput import keyboard, mouse
@@ -20,6 +21,33 @@ def now():
     return time.perf_counter()
 
 
+def beep_start():
+    winsound.Beep(1000, 120)
+
+
+def beep_stop():
+    winsound.Beep(700, 120)
+
+
+def beep_play():
+    winsound.Beep(1200, 80)
+    winsound.Beep(1500, 80)
+
+
+def beep_done():
+    winsound.Beep(900, 80)
+    winsound.Beep(650, 80)
+
+
+def beep_error():
+    winsound.Beep(300, 180)
+
+
+def beep_exit():
+    winsound.Beep(500, 80)
+    winsound.Beep(400, 80)
+
+
 def save_events():
     PATTERN_FILE.write_text(
         json.dumps(events, ensure_ascii=False, indent=2),
@@ -29,7 +57,8 @@ def save_events():
 
 def load_events():
     if not PATTERN_FILE.exists():
-        print(f"Файл записи не найден: {PATTERN_FILE}")
+        beep_error()
+        print(f"Recording file not found: {PATTERN_FILE}")
         return []
 
     return json.loads(PATTERN_FILE.read_text(encoding="utf-8"))
@@ -51,7 +80,7 @@ def on_move(x, y):
 
     current_time = now()
 
-    # Чтобы файл не раздувался слишком сильно, пишем движение раз в 10 мс.
+    # Keep the recording file small by saving mouse movement every 10 ms.
     if current_time - last_move_time < 0.01:
         return
 
@@ -82,7 +111,8 @@ def start_recording():
     recording = True
     record_start = now()
     last_move_time = 0.0
-    print("Запись началась. Двигай мышь, кликай, крути колесо. F8 - остановить.")
+    beep_start()
+    print("Recording started. Move/click/scroll the mouse. Press F8 to stop.")
 
 
 def stop_recording():
@@ -90,24 +120,28 @@ def stop_recording():
 
     recording = False
     save_events()
-    print(f"Запись остановлена. Событий: {len(events)}")
-    print(f"Файл: {PATTERN_FILE}")
+    beep_stop()
+    print(f"Recording stopped. Events: {len(events)}")
+    print(f"File: {PATTERN_FILE}")
 
 
 def play_events():
     global playing
 
     if recording:
-        print("Сначала останови запись на F8.")
+        beep_error()
+        print("Stop recording with F8 before playback.")
         return
 
     recorded_events = load_events()
     if not recorded_events:
-        print("Запись пустая. Нажми F8, запиши движения, потом снова F6.")
+        beep_error()
+        print("Recording is empty. Press F8, record actions, then press F6.")
         return
 
     playing = True
-    print(f"Воспроизведение началось. Событий: {len(recorded_events)}")
+    beep_play()
+    print(f"Playback started. Events: {len(recorded_events)}")
 
     start_time = now()
     for event in recorded_events:
@@ -131,7 +165,8 @@ def play_events():
             mouse_controller.scroll(event["dx"], event["dy"])
 
     playing = False
-    print("Воспроизведение закончено.")
+    beep_done()
+    print("Playback finished.")
 
 
 def on_key_press(key):
@@ -146,19 +181,21 @@ def on_key_press(key):
             play_events()
 
         elif key == keyboard.Key.esc:
-            print("Выход.")
+            beep_exit()
+            print("Exit.")
             return False
 
     except Exception as error:
-        print(f"Ошибка: {error}")
+        beep_error()
+        print(f"Error: {error}")
 
 
 def main():
-    print("Mouse recorder запущен.")
-    print("F8 - начать/остановить запись")
-    print("F6 - воспроизвести запись")
-    print("Esc - выйти")
-    print(f"Файл записи: {PATTERN_FILE}")
+    print("Mouse recorder started.")
+    print("F8 - start/stop recording")
+    print("F6 - play recording")
+    print("Esc - exit")
+    print(f"Recording file: {PATTERN_FILE}")
 
     mouse_listener = mouse.Listener(
         on_move=on_move,
