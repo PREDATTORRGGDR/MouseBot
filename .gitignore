@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+
+# Local recordings and generated builds
+mouse_pattern.json
+*.exe
